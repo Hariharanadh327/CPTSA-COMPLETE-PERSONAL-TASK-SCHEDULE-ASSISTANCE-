@@ -6,6 +6,7 @@ class TaskManager {
         this.currentPriority = 'all';
         this.searchQuery = '';
         this.notificationCheckInterval = null;
+        this.soundEnabled = true;
         this.init();
     }
 
@@ -15,6 +16,16 @@ class TaskManager {
         this.updateStats();
         this.checkNotificationPermission();
         this.startNotificationChecker();
+        this.logDebugInfo();
+    }
+
+    logDebugInfo() {
+        console.log('=== Task Manager Debug Info ===');
+        console.log('Current time:', new Date().toLocaleString());
+        console.log('Notification permission:', Notification.permission);
+        console.log('Total tasks:', this.tasks.length);
+        console.log('Tasks with reminders:', this.tasks.filter(t => t.reminder && t.reminder !== 'none').length);
+        console.log('Notification checker running:', this.notificationCheckInterval !== null);
     }
 
     loadTasks() {
@@ -27,36 +38,75 @@ class TaskManager {
         this.updateStats();
     }
 
-    // Notification Permission Management
     checkNotificationPermission() {
         if ('Notification' in window) {
+            console.log('Notification API available');
             if (Notification.permission === 'default') {
                 document.getElementById('notificationBanner').style.display = 'flex';
+            } else if (Notification.permission === 'granted') {
+                console.log('Notifications are enabled ✓');
+            } else {
+                console.log('Notifications are blocked ✗');
+                alert('Notifications are blocked. Please enable them in your browser settings.');
             }
+        } else {
+            console.log('Notification API not available in this browser');
         }
     }
 
     requestNotificationPermission() {
         if ('Notification' in window) {
             Notification.requestPermission().then(permission => {
+                console.log('Notification permission:', permission);
                 if (permission === 'granted') {
                     this.showNotification('Notifications enabled! You will receive reminders for your tasks.', 'success');
                     document.getElementById('notificationBanner').style.display = 'none';
+                    
+                    // Test notification
                     new Notification('Task Scheduler', {
-                        body: 'Notifications are now enabled!',
-                        icon: '📅'
+                        body: 'Notifications are now enabled! You\'ll get reminders for your tasks.',
+                        icon: '📅',
+                        tag: 'test-notification'
                     });
+                } else {
+                    alert('Please enable notifications in your browser settings to receive task reminders.');
                 }
             });
         }
     }
 
-    // Check for tasks that need notifications
+    playNotificationSound() {
+        if (!this.soundEnabled) return;
+        
+        try {
+            // Create a simple beep sound using Web Audio API
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+        } catch (e) {
+            console.log('Could not play sound:', e);
+        }
+    }
+
     startNotificationChecker() {
-        // Check every minute
+        console.log('Starting notification checker...');
+        
+        // Check every 30 seconds for more frequent updates
         this.notificationCheckInterval = setInterval(() => {
             this.checkForReminders();
-        }, 60000); // 60 seconds
+        }, 30000); // 30 seconds
 
         // Also check immediately
         this.checkForReminders();
@@ -64,6 +114,9 @@ class TaskManager {
 
     checkForReminders() {
         const now = new Date();
+        console.log('Checking for reminders at:', now.toLocaleString());
+        
+        let foundReminders = 0;
         
         this.tasks.forEach(task => {
             if (task.completed) return;
@@ -71,73 +124,117 @@ class TaskManager {
             const taskTime = new Date(task.dateTime);
             const timeDiff = taskTime - now;
             const minutesDiff = Math.floor(timeDiff / 60000);
+            const secondsDiff = Math.floor(timeDiff / 1000);
+
+            // Debug logging for tasks with reminders
+            if (task.reminder && task.reminder !== 'none') {
+                console.log(`Task: "${task.title}"`);
+                console.log(`  Task time: ${taskTime.toLocaleString()}`);
+                console.log(`  Time until task: ${minutesDiff} minutes (${secondsDiff} seconds)`);
+                console.log(`  Reminder: ${task.reminder} minutes before`);
+                console.log(`  Already notified: ${task.notifiedReminder ? 'Yes' : 'No'}`);
+            }
 
             // Check if task is overdue
             if (timeDiff < 0 && !task.notifiedOverdue) {
+                console.log(`⚠️ Task "${task.title}" is OVERDUE`);
                 this.sendNotification(task, 'overdue');
                 task.notifiedOverdue = true;
                 this.saveTasks();
+                foundReminders++;
             }
 
             // Check if reminder should be sent
-            if (task.reminder && task.reminder !== 'none') {
+            if (task.reminder && task.reminder !== 'none' && !task.notifiedReminder) {
                 const reminderMinutes = parseInt(task.reminder);
+                const reminderTime = taskTime - (reminderMinutes * 60000); // Reminder time in milliseconds
+                const timeUntilReminder = reminderTime - now;
+                const minutesUntilReminder = Math.floor(timeUntilReminder / 60000);
                 
-                // Send notification if we're within 1 minute of the reminder time
-                if (minutesDiff <= reminderMinutes && minutesDiff >= reminderMinutes - 1 && !task.notifiedReminder) {
+                console.log(`  Time until reminder: ${minutesUntilReminder} minutes`);
+                
+                // Send notification if we've reached or passed the reminder time
+                if (timeUntilReminder <= 0 && timeUntilReminder > -60000) { // Within 1 minute past reminder time
+                    console.log(`🔔 Sending reminder for "${task.title}"`);
                     this.sendNotification(task, 'reminder', reminderMinutes);
                     task.notifiedReminder = true;
                     this.saveTasks();
+                    foundReminders++;
                 }
             }
 
-            // Check if task is starting in 5 minutes (for tasks without custom reminder)
-            if (!task.reminder || task.reminder === 'none') {
-                if (minutesDiff <= 5 && minutesDiff >= 4 && !task.notifiedSoon) {
+            // Default notification for tasks starting very soon (no custom reminder)
+            if ((!task.reminder || task.reminder === 'none') && !task.notifiedSoon) {
+                if (minutesDiff <= 5 && minutesDiff >= 0) {
+                    console.log(`⏰ Task "${task.title}" starting soon`);
                     this.sendNotification(task, 'soon');
                     task.notifiedSoon = true;
                     this.saveTasks();
+                    foundReminders++;
                 }
             }
         });
 
-        this.renderTasks();
+        if (foundReminders > 0) {
+            console.log(`✓ Sent ${foundReminders} reminder(s)`);
+            this.renderTasks();
+        } else {
+            console.log('No reminders to send at this time');
+        }
     }
 
     sendNotification(task, type, reminderTime = null) {
+        console.log(`Sending ${type} notification for task: "${task.title}"`);
+        
+        let title, body, icon;
+
+        switch(type) {
+            case 'overdue':
+                title = '⚠️ Task Overdue!';
+                body = `"${task.title}" is overdue!`;
+                icon = '⚠️';
+                break;
+            case 'reminder':
+                title = '🔔 Task Reminder';
+                body = `"${task.title}" starts in ${reminderTime} minutes!`;
+                icon = '🔔';
+                break;
+            case 'soon':
+                title = '⏰ Task Starting Soon';
+                body = `"${task.title}" starts in 5 minutes!`;
+                icon = '⏰';
+                break;
+        }
+
+        // Play sound
+        this.playNotificationSound();
+
+        // Show in-app notification
+        this.showNotification(`${title} - ${body}`, type === 'overdue' ? 'warning' : 'info');
+
+        // Send browser notification
         if ('Notification' in window && Notification.permission === 'granted') {
-            let title, body, icon;
+            try {
+                const notification = new Notification(title, {
+                    body: body,
+                    icon: icon,
+                    badge: icon,
+                    tag: `task-${task.id}-${type}`,
+                    requireInteraction: type === 'overdue',
+                    vibrate: [200, 100, 200]
+                });
 
-            switch(type) {
-                case 'overdue':
-                    title = '⚠️ Task Overdue!';
-                    body = `"${task.title}" is overdue!`;
-                    icon = '⚠️';
-                    break;
-                case 'reminder':
-                    title = '🔔 Task Reminder';
-                    body = `"${task.title}" starts in ${reminderTime} minutes!`;
-                    icon = '🔔';
-                    break;
-                case 'soon':
-                    title = '⏰ Task Starting Soon';
-                    body = `"${task.title}" starts in 5 minutes!`;
-                    icon = '⏰';
-                    break;
+                notification.onclick = () => {
+                    window.focus();
+                    notification.close();
+                };
+
+                console.log('Browser notification sent successfully');
+            } catch (e) {
+                console.error('Failed to send browser notification:', e);
             }
-
-            const notification = new Notification(title, {
-                body: body,
-                icon: icon,
-                badge: icon,
-                tag: `task-${task.id}`,
-                requireInteraction: type === 'overdue'
-            });
-
-            notification.onclick = () => {
-                window.focus();
-                notification.close();
-            };
+        } else {
+            console.log('Browser notifications not available or not permitted');
         }
     }
 
@@ -157,17 +254,28 @@ class TaskManager {
             notifiedOverdue: false,
             createdAt: new Date().toISOString()
         };
+        
         this.tasks.push(newTask);
         this.saveTasks();
         this.renderTasks();
         this.showNotification('Task added successfully!', 'success');
+        
+        // Log the new task
+        console.log('New task added:', {
+            title: newTask.title,
+            time: new Date(newTask.dateTime).toLocaleString(),
+            reminder: newTask.reminder
+        });
+        
+        // Immediately check if this task needs a reminder soon
+        setTimeout(() => this.checkForReminders(), 1000);
     }
 
     updateTask(id, updatedTask) {
         const index = this.tasks.findIndex(task => task.id === id);
         if (index !== -1) {
-            // Reset notification flags if datetime changed
-            if (this.tasks[index].dateTime !== updatedTask.dateTime) {
+            if (this.tasks[index].dateTime !== updatedTask.dateTime || 
+                this.tasks[index].reminder !== updatedTask.reminder) {
                 updatedTask.notifiedReminder = false;
                 updatedTask.notifiedSoon = false;
                 updatedTask.notifiedOverdue = false;
@@ -176,6 +284,9 @@ class TaskManager {
             this.saveTasks();
             this.renderTasks();
             this.showNotification('Task updated successfully!', 'success');
+            
+            // Check reminders after update
+            setTimeout(() => this.checkForReminders(), 1000);
         }
     }
 
@@ -200,18 +311,27 @@ class TaskManager {
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
         notification.textContent = message;
+        
+        const colors = {
+            success: '#50C878',
+            info: '#4A90E2',
+            warning: '#F39C12',
+            error: '#E74C3C'
+        };
+        
         notification.style.cssText = `
             position: fixed;
             top: 20px;
             right: 20px;
             padding: 15px 25px;
-            background: ${type === 'success' ? '#50C878' : '#4A90E2'};
+            background: ${colors[type] || colors.info};
             color: white;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
             z-index: 10000;
             font-weight: 600;
             animation: slideIn 0.3s ease;
+            max-width: 350px;
         `;
         
         document.body.appendChild(notification);
@@ -219,7 +339,7 @@ class TaskManager {
         setTimeout(() => {
             notification.style.animation = 'slideOut 0.3s ease';
             setTimeout(() => notification.remove(), 300);
-        }, 3000);
+        }, 5000);
     }
 
     filterTasks() {
@@ -329,7 +449,6 @@ class TaskManager {
             minute: '2-digit'
         });
 
-        // Time remaining or overdue text
         let timeText = '';
         if (!task.completed) {
             if (timeDiff < 0) {
