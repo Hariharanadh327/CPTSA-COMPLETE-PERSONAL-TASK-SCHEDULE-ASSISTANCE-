@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Personal Scheduling Assistant</title>
+    <title>Personal Task Scheduling Assistant</title>
     <link rel="stylesheet" href="index.css">
 </head>
 <body>
@@ -29,7 +29,7 @@
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="dateTime">Date & Time</label>
+                        <label for="dateTime">Date & Time *</label>
                         <input type="datetime-local" id="dateTime" required>
                     </div>
                     
@@ -46,41 +46,88 @@
                         </select>
                     </div>
                 </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="priority">Priority *</label>
+                        <select id="priority" required>
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
+                            <option value="High">High</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tags">Tags (comma-separated)</label>
+                        <input type="text" id="tags" placeholder="e.g., urgent, meeting, important">
+                    </div>
+                </div>
                 
                 <button type="submit" class="btn btn-primary">Add Task</button>
             </form>
         </section>
 
+        <!-- Search and Filter Section -->
+        <section class="search-filter-section">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="🔍 Search tasks by title, description, or tags...">
+            </div>
+        </section>
+
         <!-- Filter Section -->
-<section class="filter-section">
-  <div class="filter-buttons">
-    <button class="filter-btn active" data-filter="all">All Tasks</button>
-    <button class="filter-btn" data-filter="today">Today</button>
-    <button class="filter-btn" data-filter="upcoming">Upcoming</button>
-    <button class="filter-btn" data-filter="completed">Completed</button>
-    <div style="text-align:center;">
-      <button class="filter-btn" id="pointsBtn">Points</button>
-      <p id="pointsCount" style="margin-top:8px; font-weight:600; color:var(--primary-color);">
-        Completed tasks:
-      </p>
-    </div>
-  </div>
-  
-  <div class="category-filter">
-    <label for="categoryFilter">Filter by Category:</label>
-    <select id="categoryFilter">
-      <option value="all">All Categories</option>
-      <option value="Work">Work</option>
-      <option value="Personal">Personal</option>
-      <option value="Health">Health</option>
-      <option value="Fitness">Fitness</option>
-      <option value="Education">Education</option>
-      <option value="Other">Other</option>
-    </select>
-  </div>
-</section>
+        <section class="filter-section">
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-filter="all">All Tasks</button>
+                <button class="filter-btn" data-filter="today">Today</button>
+                <button class="filter-btn" data-filter="upcoming">Upcoming</button>
+                <button class="filter-btn" data-filter="completed">Completed</button>
+            </div>
+            
+            <div class="filter-controls">
+                <div class="category-filter">
+                    <label for="categoryFilter">Category:</label>
+                    <select id="categoryFilter">
+                        <option value="all">All Categories</option>
+                        <option value="Work">Work</option>
+                        <option value="Personal">Personal</option>
+                        <option value="Health">Health</option>
+                        <option value="Fitness">Fitness</option>
+                        <option value="Education">Education</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
 
+                <div class="priority-filter">
+                    <label for="priorityFilter">Priority:</label>
+                    <select id="priorityFilter">
+                        <option value="all">All Priorities</option>
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                </div>
+            </div>
+        </section>
 
+        <!-- Tasks Statistics -->
+        <section class="stats-section">
+            <div class="stat-card">
+                <h3>Total Tasks</h3>
+                <p id="totalTasks">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Completed</h3>
+                <p id="completedTasks">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Pending</h3>
+                <p id="pendingTasks">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>High Priority</h3>
+                <p id="highPriorityTasks">0</p>
+            </div>
+        </section>
 
         <!-- Tasks Display -->
         <section class="tasks-section">
@@ -129,6 +176,22 @@
                         </select>
                     </div>
                 </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editPriority">Priority *</label>
+                        <select id="editPriority" required>
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editTags">Tags (comma-separated)</label>
+                        <input type="text" id="editTags" placeholder="e.g., urgent, meeting, important">
+                    </div>
+                </div>
                 
                 <button type="submit" class="btn btn-primary">Update Task</button>
             </form>
@@ -137,5 +200,4 @@
 
     <script src="app.js"></script>
 </body>
-
 </html>
