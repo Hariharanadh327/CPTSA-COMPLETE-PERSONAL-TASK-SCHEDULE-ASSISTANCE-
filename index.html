@@ -10,8 +10,15 @@
     <div class="container">
         <header>
             <h1>Personal Task Scheduling Assistant</h1>
-            <p class="subtitle">Manage your tasks efficiently</p>
+            <p class="subtitle">Manage your tasks efficiently with smart reminders</p>
         </header>
+
+        <!-- Notification Permission Banner -->
+        <div id="notificationBanner" class="notification-banner" style="display: none;">
+            <p>📢 Enable notifications to get reminders for your tasks!</p>
+            <button class="btn btn-primary" onclick="taskManager.requestNotificationPermission()">Enable Notifications</button>
+            <button class="btn-close" onclick="document.getElementById('notificationBanner').style.display='none'">✕</button>
+        </div>
 
         <!-- Add Task Form -->
         <section class="add-task-section">
@@ -58,9 +65,21 @@
                     </div>
                     
                     <div class="form-group">
-                        <label for="tags">Tags (comma-separated)</label>
-                        <input type="text" id="tags" placeholder="e.g., urgent, meeting, important">
+                        <label for="reminder">Reminder</label>
+                        <select id="reminder">
+                            <option value="none">No Reminder</option>
+                            <option value="5">5 minutes before</option>
+                            <option value="15">15 minutes before</option>
+                            <option value="30">30 minutes before</option>
+                            <option value="60">1 hour before</option>
+                            <option value="1440">1 day before</option>
+                        </select>
                     </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="tags">Tags (comma-separated)</label>
+                    <input type="text" id="tags" placeholder="e.g., urgent, meeting, important">
                 </div>
                 
                 <button type="submit" class="btn btn-primary">Add Task</button>
@@ -80,6 +99,7 @@
                 <button class="filter-btn active" data-filter="all">All Tasks</button>
                 <button class="filter-btn" data-filter="today">Today</button>
                 <button class="filter-btn" data-filter="upcoming">Upcoming</button>
+                <button class="filter-btn" data-filter="overdue">Overdue</button>
                 <button class="filter-btn" data-filter="completed">Completed</button>
             </div>
             
@@ -115,17 +135,17 @@
                 <h3>Total Tasks</h3>
                 <p id="totalTasks">0</p>
             </div>
-            <div class="stat-card">
+            <div class="stat-card stat-completed">
                 <h3>Completed</h3>
                 <p id="completedTasks">0</p>
             </div>
-            <div class="stat-card">
+            <div class="stat-card stat-pending">
                 <h3>Pending</h3>
                 <p id="pendingTasks">0</p>
             </div>
-            <div class="stat-card">
-                <h3>High Priority</h3>
-                <p id="highPriorityTasks">0</p>
+            <div class="stat-card stat-overdue">
+                <h3>Overdue</h3>
+                <p id="overdueTasks">0</p>
             </div>
         </section>
 
@@ -188,9 +208,21 @@
                     </div>
                     
                     <div class="form-group">
-                        <label for="editTags">Tags (comma-separated)</label>
-                        <input type="text" id="editTags" placeholder="e.g., urgent, meeting, important">
+                        <label for="editReminder">Reminder</label>
+                        <select id="editReminder">
+                            <option value="none">No Reminder</option>
+                            <option value="5">5 minutes before</option>
+                            <option value="15">15 minutes before</option>
+                            <option value="30">30 minutes before</option>
+                            <option value="60">1 hour before</option>
+                            <option value="1440">1 day before</option>
+                        </select>
                     </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="editTags">Tags (comma-separated)</label>
+                    <input type="text" id="editTags" placeholder="e.g., urgent, meeting, important">
                 </div>
                 
                 <button type="submit" class="btn btn-primary">Update Task</button>
