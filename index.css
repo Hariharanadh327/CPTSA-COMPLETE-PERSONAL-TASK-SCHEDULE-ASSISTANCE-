@@ -17,6 +17,8 @@
     --priority-high: #E74C3C;
     --priority-medium: #F39C12;
     --priority-low: #3498DB;
+    --overdue-color: #C0392B;
+    --soon-color: #E67E22;
 }
 
 body {
@@ -52,6 +54,51 @@ header h1 {
 .subtitle {
     color: var(--text-color);
     font-size: 1.1rem;
+}
+
+/* Notification Banner */
+.notification-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.notification-banner p {
+    flex: 1;
+    margin: 0;
+    font-weight: 500;
+}
+
+.notification-banner .btn-primary {
+    background: white;
+    color: #667eea;
+    padding: 10px 20px;
+    font-size: 0.9rem;
+}
+
+.notification-banner .btn-primary:hover {
+    background: var(--light-color);
+}
+
+.notification-banner .btn-close {
+    background: transparent;
+    border: 2px solid white;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.notification-banner .btn-close:hover {
+    background: rgba(255, 255, 255, 0.2);
 }
 
 .add-task-section {
@@ -269,15 +316,15 @@ header h1 {
     font-weight: bold;
 }
 
-.stat-card:nth-child(2) {
+.stat-card.stat-completed {
     background: linear-gradient(135deg, var(--secondary-color), #45B869);
 }
 
-.stat-card:nth-child(3) {
+.stat-card.stat-pending {
     background: linear-gradient(135deg, var(--warning-color), #E67E22);
 }
 
-.stat-card:nth-child(4) {
+.stat-card.stat-overdue {
     background: linear-gradient(135deg, var(--danger-color), #C0392B);
 }
 
@@ -324,6 +371,21 @@ header h1 {
 
 .task-card.priority-low::before {
     background: var(--priority-low);
+}
+
+/* Status-based styling */
+.task-card.status-overdue {
+    background: #fee;
+    border-left: 5px solid var(--overdue-color);
+}
+
+.task-card.status-soon {
+    background: #fff5e6;
+    border-left: 5px solid var(--soon-color);
+}
+
+.task-card.status-upcoming-soon {
+    background: #e6f7ff;
 }
 
 .task-card:hover {
@@ -447,7 +509,54 @@ header h1 {
     font-size: 0.95rem;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.reminder-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    background: #E8F4FD;
+    color: var(--primary-color);
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* Time indicators */
+.time-indicator {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-top: 8px;
+}
+
+.time-indicator.overdue {
+    background: var(--overdue-color);
+    color: white;
+    animation: pulse 2s infinite;
+}
+
+.time-indicator.soon {
+    background: var(--soon-color);
+    color: white;
+    animation: pulse 2s infinite;
+}
+
+.time-indicator.upcoming {
+    background: #E8F4FD;
+    color: var(--primary-color);
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
 }
 
 .task-actions {
@@ -536,6 +645,11 @@ header h1 {
 
     .form-row {
         grid-template-columns: 1fr;
+    }
+
+    .notification-banner {
+        flex-direction: column;
+        text-align: center;
     }
 
     .filter-section {
