@@ -81,6 +81,40 @@
                     <label for="tags">Tags (comma-separated)</label>
                     <input type="text" id="tags" placeholder="e.g., urgent, meeting, important">
                 </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="isRecurring"> Recurring Task
+                    </label>
+                </div>
+
+                <div id="recurringOptions" style="display: none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="recurringType">Repeat</label>
+                            <select id="recurringType">
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="custom">Custom (days)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="recurringInterval">Every</label>
+                            <input type="number" id="recurringInterval" min="1" value="1" placeholder="1">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="recurringEnd">End Date (optional)</label>
+                        <input type="date" id="recurringEnd">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="attachments">Attachments</label>
+                    <input type="file" id="attachments" multiple accept="image/*,.pdf,.doc,.docx,.txt">
+                    <small>Max 5MB per file</small>
+                </div>
                 
                 <button type="submit" class="btn btn-primary">Add Task</button>
             </form>
@@ -223,6 +257,41 @@
                 <div class="form-group">
                     <label for="editTags">Tags (comma-separated)</label>
                     <input type="text" id="editTags" placeholder="e.g., urgent, meeting, important">
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="editIsRecurring"> Recurring Task
+                    </label>
+                </div>
+
+                <div id="editRecurringOptions" style="display: none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editRecurringType">Repeat</label>
+                            <select id="editRecurringType">
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="custom">Custom (days)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="editRecurringInterval">Every</label>
+                            <input type="number" id="editRecurringInterval" min="1" value="1">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="editRecurringEnd">End Date (optional)</label>
+                        <input type="date" id="editRecurringEnd">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="editAttachments">Add Attachments</label>
+                    <input type="file" id="editAttachments" multiple accept="image/*,.pdf,.doc,.docx,.txt">
+                    <small>Max 5MB per file</small>
+                    <div id="currentAttachments" class="current-attachments"></div>
                 </div>
                 
                 <button type="submit" class="btn btn-primary">Update Task</button>
