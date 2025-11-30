@@ -7,16 +7,19 @@ class TaskManager {
         this.searchQuery = '';
         this.notificationCheckInterval = null;
         this.soundEnabled = true;
+        this.darkMode = localStorage.getItem('darkMode') === 'true';
         this.init();
     }
 
     init() {
+        this.applyDarkMode();
         this.renderTasks();
         this.attachEventListeners();
         this.updateStats();
         this.checkNotificationPermission();
         this.startNotificationChecker();
         this.logDebugInfo();
+        this.updateAnalytics();
     }
 
     logDebugInfo() {
@@ -36,6 +39,361 @@ class TaskManager {
     saveTasks() {
         localStorage.setItem('schedulingTasks', JSON.stringify(this.tasks));
         this.updateStats();
+        this.updateAnalytics();
+    }
+
+    // Dark Mode Methods
+    applyDarkMode() {
+        if (this.darkMode) {
+            document.body.classList.add('dark-mode');
+        } else {
+            document.body.classList.remove('dark-mode');
+        }
+    }
+
+    toggleDarkMode() {
+        this.darkMode = !this.darkMode;
+        localStorage.setItem('darkMode', this.darkMode);
+        this.applyDarkMode();
+        const icon = this.darkMode ? '☀️' : '🌙';
+        document.getElementById('darkModeToggle').textContent = icon;
+    }
+
+    // Export/Import Methods
+    exportTasks(format) {
+        if (this.tasks.length === 0) {
+            this.showNotification('No tasks to export!', 'warning');
+            return;
+        }
+
+        if (format === 'json') {
+            this.exportToJSON();
+        } else if (format === 'csv') {
+            this.exportToCSV();
+        }
+    }
+
+    exportToJSON() {
+        const dataStr = JSON.stringify(this.tasks, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        this.downloadFile(blob, `tasks_${this.getTimestamp()}.json`);
+        this.showNotification('Tasks exported as JSON!', 'success');
+    }
+
+    exportToCSV() {
+        const headers = ['Title', 'Description', 'Date & Time', 'Category', 'Priority', 'Completed', 'Tags'];
+        const rows = this.tasks.map(task => [
+            task.title,
+            task.description || '',
+            task.dateTime,
+            task.category,
+            task.priority,
+            task.completed ? 'Yes' : 'No',
+            (task.tags || []).join('; ')
+        ]);
+
+        let csv = headers.join(',') + '\\n';
+        rows.forEach(row => {
+            csv += row.map(field => `\"${String(field).replace(/\"/g, '\"\"')}\"`).join(',') + '\\n';
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv' });
+        this.downloadFile(blob, `tasks_${this.getTimestamp()}.csv`);
+        this.showNotification('Tasks exported as CSV!', 'success');
+    }
+
+    downloadFile(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    getTimestamp() {
+        return new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    }
+
+    importTasks(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const content = e.target.result;
+                let importedTasks = [];
+
+                if (file.name.endsWith('.json')) {
+                    importedTasks = JSON.parse(content);
+                } else if (file.name.endsWith('.csv')) {
+                    importedTasks = this.parseCSV(content);
+                }
+
+                if (!Array.isArray(importedTasks) || importedTasks.length === 0) {
+                    this.showNotification('No valid tasks found in file!', 'error');
+                    return;
+                }
+
+                const confirmed = confirm(`Import ${importedTasks.length} tasks? This will add to your existing tasks.`);
+                if (confirmed) {
+                    importedTasks.forEach(task => {
+                        task.id = Date.now() + Math.random();
+                        task.notifiedReminder = false;
+                        task.notifiedSoon = false;
+                        task.notifiedOverdue = false;
+                    });
+                    
+                    this.tasks = [...this.tasks, ...importedTasks];
+                    this.saveTasks();
+                    this.renderTasks();
+                    this.showNotification(`Imported ${importedTasks.length} tasks successfully!`, 'success');
+                }
+            } catch (error) {
+                console.error('Import error:', error);
+                this.showNotification('Failed to import tasks. Invalid file format.', 'error');
+            }
+        };
+        reader.readAsText(file);
+        event.target.value = '';
+    }
+
+    parseCSV(csv) {
+        const lines = csv.split('\\n').filter(line => line.trim());
+        if (lines.length < 2) return [];
+
+        const tasks = [];
+        for (let i = 1; i < lines.length; i++) {
+            const matches = lines[i].match(/\"([^\"]*)\"/g);
+            if (!matches || matches.length < 6) continue;
+
+            const values = matches.map(m => m.slice(1, -1).replace(/\"\"/g, '\"'));
+            tasks.push({
+                title: values[0],
+                description: values[1],
+                dateTime: values[2],
+                category: values[3],
+                priority: values[4],
+                completed: values[5] === 'Yes',
+                tags: values[6] ? values[6].split('; ') : [],
+                reminder: 'none',
+                recurring: null,
+                attachments: [],
+                subtasks: []
+            });
+        }
+        return tasks;
+    }
+
+    // Analytics Methods
+    updateAnalytics() {
+        this.updateCompletionRate();
+        this.updateCategoryChart();
+        this.updatePriorityChart();
+        this.updateWeeklyChart();
+        this.updateProductivityInsights();
+    }
+
+    updateCompletionRate() {
+        const total = this.tasks.length;
+        const completed = this.tasks.filter(t => t.completed).length;
+        const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+        
+        const rateElement = document.getElementById('completionRate');
+        if (rateElement) {
+            rateElement.textContent = rate + '%';
+        }
+    }
+
+    updateCategoryChart() {
+        const canvas = document.getElementById('categoryChart');
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        const categories = {};
+        
+        this.tasks.forEach(task => {
+            categories[task.category] = (categories[task.category] || 0) + 1;
+        });
+
+        this.drawPieChart(ctx, categories, canvas.width, canvas.height);
+    }
+
+    updatePriorityChart() {
+        const canvas = document.getElementById('priorityChart');
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        const priorities = { High: 0, Medium: 0, Low: 0 };
+        
+        this.tasks.filter(t => !t.completed).forEach(task => {
+            priorities[task.priority]++;
+        });
+
+        this.drawBarChart(ctx, priorities, canvas.width, canvas.height);
+    }
+
+    updateWeeklyChart() {
+        const canvas = document.getElementById('weeklyChart');
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        const weekData = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        
+        this.tasks.filter(t => t.completed).forEach(task => {
+            const date = new Date(task.dateTime);
+            const dayName = days[date.getDay()];
+            weekData[dayName]++;
+        });
+
+        this.drawLineChart(ctx, weekData, canvas.width, canvas.height);
+    }
+
+    drawPieChart(ctx, data, width, height) {
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const radius = Math.min(width, height) / 2 - 10;
+        
+        const colors = ['#4A90E2', '#50C878', '#E74C3C', '#F39C12', '#9B59B6', '#95A5A6'];
+        const total = Object.values(data).reduce((a, b) => a + b, 0);
+        
+        if (total === 0) {
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = '#999';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('No data', centerX, centerY);
+            return;
+        }
+
+        let startAngle = 0;
+        Object.entries(data).forEach(([label, value], index) => {
+            const sliceAngle = (value / total) * 2 * Math.PI;
+            
+            ctx.fillStyle = colors[index % colors.length];
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
+            ctx.closePath();
+            ctx.fill();
+            
+            startAngle += sliceAngle;
+        });
+    }
+
+    drawBarChart(ctx, data, width, height) {
+        ctx.clearRect(0, 0, width, height);
+        
+        const entries = Object.entries(data);
+        const max = Math.max(...Object.values(data), 1);
+        const barWidth = width / entries.length - 20;
+        const colors = { High: '#E74C3C', Medium: '#F39C12', Low: '#3498DB' };
+        
+        entries.forEach(([label, value], index) => {
+            const barHeight = (value / max) * (height - 40);
+            const x = index * (barWidth + 20) + 10;
+            const y = height - barHeight - 20;
+            
+            ctx.fillStyle = colors[label] || '#4A90E2';
+            ctx.fillRect(x, y, barWidth, barHeight);
+            
+            ctx.fillStyle = '#333';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(label, x + barWidth / 2, height - 5);
+            ctx.fillText(value, x + barWidth / 2, y - 5);
+        });
+    }
+
+    drawLineChart(ctx, data, width, height) {
+        ctx.clearRect(0, 0, width, height);
+        
+        const entries = Object.entries(data);
+        const max = Math.max(...Object.values(data), 1);
+        const stepX = width / (entries.length - 1 || 1);
+        
+        ctx.strokeStyle = '#4A90E2';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        
+        entries.forEach(([label, value], index) => {
+            const x = index * stepX;
+            const y = height - 30 - (value / max) * (height - 50);
+            
+            if (index === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+            
+            ctx.fillStyle = '#4A90E2';
+            ctx.beginPath();
+            ctx.arc(x, y, 4, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.fillStyle = '#333';
+            ctx.font = '11px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(label, x, height - 10);
+        });
+        
+        ctx.strokeStyle = '#4A90E2';
+        ctx.stroke();
+    }
+
+    updateProductivityInsights() {
+        const container = document.getElementById('productivityInsights');
+        if (!container) return;
+
+        const insights = [];
+        const total = this.tasks.length;
+        const completed = this.tasks.filter(t => t.completed).length;
+        const pending = total - completed;
+        const now = new Date();
+        const overdue = this.tasks.filter(t => !t.completed && new Date(t.dateTime) < now).length;
+        
+        if (total === 0) {
+            insights.push({ icon: '📝', text: 'No tasks yet. <strong>Create your first task</strong> to get started!' });
+        } else {
+            const rate = Math.round((completed / total) * 100);
+            
+            if (rate >= 80) {
+                insights.push({ icon: '🎉', text: `Amazing! You've completed <strong>${rate}%</strong> of your tasks!` });
+            } else if (rate >= 50) {
+                insights.push({ icon: '💪', text: `Good progress! <strong>${rate}%</strong> completion rate. Keep going!` });
+            } else {
+                insights.push({ icon: '⚡', text: `You have <strong>${pending} pending tasks</strong>. Let's tackle them!` });
+            }
+            
+            if (overdue > 0) {
+                insights.push({ icon: '⚠️', text: `You have <strong>${overdue} overdue task${overdue > 1 ? 's' : ''}</strong>. Prioritize them!` });
+            }
+            
+            const highPriority = this.tasks.filter(t => !t.completed && t.priority === 'High').length;
+            if (highPriority > 0) {
+                insights.push({ icon: '🔥', text: `<strong>${highPriority} high-priority task${highPriority > 1 ? 's' : ''}</strong> need${highPriority === 1 ? 's' : ''} your attention!` });
+            }
+            
+            const todayTasks = this.tasks.filter(t => {
+                const taskDate = new Date(t.dateTime);
+                return !t.completed && taskDate.toDateString() === now.toDateString();
+            }).length;
+            
+            if (todayTasks > 0) {
+                insights.push({ icon: '📅', text: `You have <strong>${todayTasks} task${todayTasks > 1 ? 's' : ''} due today</strong>. Stay focused!` });
+            }
+        }
+        
+        container.innerHTML = insights.map(insight => `
+            <div class=\"insight-item\">
+                <span class=\"insight-icon\">${insight.icon}</span>
+                <p class=\"insight-text\">${insight.text}</p>
+            </div>
+        `).join('');
     }
 
     checkNotificationPermission() {
@@ -748,6 +1106,26 @@ class TaskManager {
     }
 
     attachEventListeners() {
+        // Dark Mode Toggle
+        document.getElementById('darkModeToggle').addEventListener('click', () => {
+            this.toggleDarkMode();
+        });
+
+        // Analytics Toggle
+        document.getElementById('toggleAnalytics').addEventListener('click', (e) => {
+            const content = document.getElementById('analyticsContent');
+            const button = e.target;
+            
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                button.textContent = 'Hide Analytics';
+                this.updateAnalytics();
+            } else {
+                content.style.display = 'none';
+                button.textContent = 'Show Analytics';
+            }
+        });
+
         // Toggle recurring options visibility
         document.getElementById('isRecurring').addEventListener('change', (e) => {
             document.getElementById('recurringOptions').style.display = e.target.checked ? 'block' : 'none';
