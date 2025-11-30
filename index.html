@@ -9,8 +9,22 @@
 <body>
     <div class="container">
         <header>
-            <h1>Personal Task Scheduling Assistant</h1>
-            <p class="subtitle">Manage your tasks efficiently with smart reminders</p>
+            <div class="header-top">
+                <div>
+                    <h1>Personal Task Scheduling Assistant</h1>
+                    <p class="subtitle">Manage your tasks efficiently with smart reminders</p>
+                </div>
+                <div class="header-controls">
+                    <button class="btn-icon" id="darkModeToggle" title="Toggle Dark Mode">🌙</button>
+                    <div class="export-import-buttons">
+                        <button class="btn btn-secondary" onclick="taskManager.exportTasks('json')">📥 Export JSON</button>
+                        <button class="btn btn-secondary" onclick="taskManager.exportTasks('csv')">📥 Export CSV</button>
+                        <label for="importFile" class="btn btn-secondary" style="cursor: pointer; margin: 0;">📤 Import
+                            <input type="file" id="importFile" accept=".json,.csv" style="display: none;" onchange="taskManager.importTasks(event)">
+                        </label>
+                    </div>
+                </div>
+            </div>
         </header>
 
         <!-- Notification Permission Banner -->
@@ -180,6 +194,47 @@
             <div class="stat-card stat-overdue">
                 <h3>Overdue</h3>
                 <p id="overdueTasks">0</p>
+            </div>
+        </section>
+
+        <!-- Analytics Dashboard -->
+        <section class="analytics-section">
+            <div class="analytics-header">
+                <h2>📊 Productivity Analytics</h2>
+                <button class="btn-toggle-analytics" id="toggleAnalytics">Show Analytics</button>
+            </div>
+            <div id="analyticsContent" class="analytics-content" style="display: none;">
+                <div class="analytics-grid">
+                    <div class="analytics-card">
+                        <h3>Completion Rate</h3>
+                        <div class="chart-container">
+                            <canvas id="completionChart"></canvas>
+                        </div>
+                        <p class="analytics-value" id="completionRate">0%</p>
+                    </div>
+                    <div class="analytics-card">
+                        <h3>Tasks by Category</h3>
+                        <div class="chart-container">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="analytics-card">
+                        <h3>Tasks by Priority</h3>
+                        <div class="chart-container">
+                            <canvas id="priorityChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="analytics-card">
+                        <h3>Weekly Progress</h3>
+                        <div class="chart-container">
+                            <canvas id="weeklyChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="analytics-card full-width">
+                        <h3>Productivity Insights</h3>
+                        <div id="productivityInsights" class="insights-list"></div>
+                    </div>
+                </div>
             </div>
         </section>
 
