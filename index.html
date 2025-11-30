@@ -17,9 +17,9 @@
                 <div class="header-controls">
                     <button class="btn-icon" id="darkModeToggle" title="Toggle Dark Mode">🌙</button>
                     <div class="export-import-buttons">
-                        <button class="btn btn-secondary" onclick="taskManager.exportTasks('json')">📥 Export JSON</button>
-                        <button class="btn btn-secondary" onclick="taskManager.exportTasks('csv')">📥 Export CSV</button>
-                        <label for="importFile" class="btn btn-secondary" style="cursor: pointer; margin: 0;">📤 Import
+                        <button class="btn btn-secondary" onclick="taskManager.exportTasks('json')">💾 Export JSON</button>
+                        <button class="btn btn-secondary" onclick="taskManager.exportTasks('csv')">📊 Export CSV</button>
+                        <label for="importFile" class="btn btn-secondary" style="cursor: pointer; margin: 0;">⬆️ Import
                             <input type="file" id="importFile" accept=".json,.csv" style="display: none;" onchange="taskManager.importTasks(event)">
                         </label>
                     </div>
@@ -36,7 +36,7 @@
 
         <!-- Add Task Form -->
         <section class="add-task-section">
-            <h2>Add New Task</h2>
+            <h2>✨ Add New Task</h2>
             <form id="taskForm">
                 <div class="form-group">
                     <label for="title">Task Title *</label>
@@ -180,19 +180,19 @@
         <!-- Tasks Statistics -->
         <section class="stats-section">
             <div class="stat-card">
-                <h3>Total Tasks</h3>
+                <h3>📋 Total Tasks</h3>
                 <p id="totalTasks">0</p>
             </div>
             <div class="stat-card stat-completed">
-                <h3>Completed</h3>
+                <h3>✅ Completed</h3>
                 <p id="completedTasks">0</p>
             </div>
             <div class="stat-card stat-pending">
-                <h3>Pending</h3>
+                <h3>⏳ Pending</h3>
                 <p id="pendingTasks">0</p>
             </div>
             <div class="stat-card stat-overdue">
-                <h3>Overdue</h3>
+                <h3>🔥 Overdue</h3>
                 <p id="overdueTasks">0</p>
             </div>
         </section>
@@ -240,7 +240,7 @@
 
         <!-- Tasks Display -->
         <section class="tasks-section">
-            <h2>Your Tasks</h2>
+            <h2>📝 Your Tasks</h2>
             <div id="tasksList" class="tasks-list">
                 <!-- Tasks will be dynamically inserted here -->
             </div>
@@ -254,7 +254,7 @@
     <div id="editModal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
-            <h2>Edit Task</h2>
+            <h2>✏️ Edit Task</h2>
             <form id="editTaskForm">
                 <input type="hidden" id="editTaskId">
                 <div class="form-group">
