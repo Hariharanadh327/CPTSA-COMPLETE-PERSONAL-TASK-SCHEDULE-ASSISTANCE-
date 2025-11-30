@@ -252,7 +252,10 @@ class TaskManager {
             notifiedReminder: false,
             notifiedSoon: false,
             notifiedOverdue: false,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            recurring: task.recurring || null,
+            attachments: task.attachments || [],
+            subtasks: task.subtasks || []
         };
         
         this.tasks.push(newTask);
@@ -301,9 +304,105 @@ class TaskManager {
         const task = this.tasks.find(task => task.id === id);
         if (task) {
             task.completed = !task.completed;
+            
+            // Handle recurring tasks
+            if (task.completed && task.recurring) {
+                this.createNextRecurrence(task);
+            }
+            
             this.saveTasks();
             this.renderTasks();
             this.showNotification(task.completed ? 'Task completed! 🎉' : 'Task marked as incomplete', 'success');
+        }
+    }
+
+    createNextRecurrence(task) {
+        const currentDate = new Date(task.dateTime);
+        let nextDate = new Date(currentDate);
+        
+        const interval = task.recurring.interval || 1;
+        
+        switch(task.recurring.type) {
+            case 'daily':
+                nextDate.setDate(nextDate.getDate() + interval);
+                break;
+            case 'weekly':
+                nextDate.setDate(nextDate.getDate() + (7 * interval));
+                break;
+            case 'monthly':
+                nextDate.setMonth(nextDate.getMonth() + interval);
+                break;
+            case 'custom':
+                nextDate.setDate(nextDate.getDate() + interval);
+                break;
+        }
+        
+        // Check if we've passed the end date
+        if (task.recurring.endDate) {
+            const endDate = new Date(task.recurring.endDate);
+            if (nextDate > endDate) {
+                console.log('Recurring task ended');
+                return;
+            }
+        }
+        
+        // Create the next occurrence
+        const nextTask = {
+            ...task,
+            id: Date.now(),
+            dateTime: nextDate.toISOString().slice(0, 16),
+            completed: false,
+            notifiedReminder: false,
+            notifiedSoon: false,
+            notifiedOverdue: false,
+            createdAt: new Date().toISOString()
+        };
+        
+        this.tasks.push(nextTask);
+        this.showNotification('Next occurrence created for recurring task', 'info');
+    }
+
+    addSubtask(taskId, subtaskText) {
+        const task = this.tasks.find(t => t.id === taskId);
+        if (task) {
+            if (!task.subtasks) task.subtasks = [];
+            task.subtasks.push({
+                id: Date.now(),
+                text: subtaskText,
+                completed: false
+            });
+            this.saveTasks();
+            this.renderTasks();
+        }
+    }
+
+    toggleSubtask(taskId, subtaskId) {
+        const task = this.tasks.find(t => t.id === taskId);
+        if (task && task.subtasks) {
+            const subtask = task.subtasks.find(st => st.id === subtaskId);
+            if (subtask) {
+                subtask.completed = !subtask.completed;
+                this.saveTasks();
+                this.renderTasks();
+            }
+        }
+    }
+
+    deleteSubtask(taskId, subtaskId) {
+        const task = this.tasks.find(t => t.id === taskId);
+        if (task && task.subtasks) {
+            task.subtasks = task.subtasks.filter(st => st.id !== subtaskId);
+            this.saveTasks();
+            this.renderTasks();
+        }
+    }
+
+    deleteAttachment(taskId, attachmentIndex) {
+        const task = this.tasks.find(t => t.id === taskId);
+        if (task && task.attachments) {
+            task.attachments.splice(attachmentIndex, 1);
+            this.saveTasks();
+            this.renderTasks();
         }
     }
 
@@ -469,6 +568,45 @@ class TaskManager {
             ? `<span class="reminder-badge">🔔 ${task.reminder < 60 ? task.reminder + ' min' : task.reminder / 60 + ' hr'} reminder</span>`
             : '';
 
+        const recurringText = task.recurring
+            ? `<span class="recurring-badge">🔁 ${task.recurring.type === 'custom' ? 'Every ' + task.recurring.interval + ' days' : task.recurring.type}</span>`
+            : '';
+
+        const attachmentsHTML = task.attachments && task.attachments.length > 0
+            ? `<div class="task-attachments">
+                ${task.attachments.map((att, idx) => `
+                    <div class="attachment-item">
+                        <span class="attachment-icon">📎</span>
+                        <a href="${att.data}" download="${att.name}" class="attachment-link">${att.name}</a>
+                        <button class="btn-delete-attachment" onclick="taskManager.deleteAttachment(${task.id}, ${idx})" title="Delete attachment">×</button>
+                    </div>
+                `).join('')}
+               </div>`
+            : '';
+
+        const subtasksHTML = task.subtasks && task.subtasks.length > 0
+            ? `<div class="subtasks-container">
+                <h4 class="subtasks-title">Subtasks (${task.subtasks.filter(st => st.completed).length}/${task.subtasks.length})</h4>
+                <div class="subtasks-list">
+                    ${task.subtasks.map(st => `
+                        <div class="subtask-item ${st.completed ? 'completed' : ''}">
+                            <input type="checkbox" ${st.completed ? 'checked' : ''} 
+                                   onchange="taskManager.toggleSubtask(${task.id}, ${st.id})">
+                            <span class="subtask-text">${st.text}</span>
+                            <button class="btn-delete-subtask" onclick="taskManager.deleteSubtask(${task.id}, ${st.id})" title="Delete subtask">×</button>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="add-subtask-container">
+                    <input type="text" class="subtask-input" id="subtask-${task.id}" placeholder="Add subtask...">
+                    <button class="btn-add-subtask" onclick="taskManager.addSubtaskFromInput(${task.id})">+</button>
+                </div>
+               </div>`
+            : `<div class="add-subtask-container">
+                <input type="text" class="subtask-input" id="subtask-${task.id}" placeholder="Add subtask...">
+                <button class="btn-add-subtask" onclick="taskManager.addSubtaskFromInput(${task.id})">+</button>
+               </div>`;
+
         card.innerHTML = `
             <div class="task-priority-indicator"></div>
             <div class="task-info">
@@ -484,8 +622,11 @@ class TaskManager {
                 <div class="task-datetime">
                     📅 ${formattedDateTime}
                     ${reminderText}
+                    ${recurringText}
                 </div>
                 ${timeText}
+                ${attachmentsHTML}
+                ${subtasksHTML}
             </div>
             <div class="task-actions">
                 <button class="btn btn-success" onclick="taskManager.toggleComplete(${task.id})" title="${task.completed ? 'Mark as incomplete' : 'Mark as complete'}">
@@ -516,7 +657,41 @@ class TaskManager {
         document.getElementById('editReminder').value = task.reminder || 'none';
         document.getElementById('editTags').value = task.tags ? task.tags.join(', ') : '';
 
+        // Handle recurring task fields
+        const isRecurring = task.recurring !== null && task.recurring !== undefined;
+        document.getElementById('editIsRecurring').checked = isRecurring;
+        document.getElementById('editRecurringOptions').style.display = isRecurring ? 'block' : 'none';
+        
+        if (isRecurring) {
+            document.getElementById('editRecurringType').value = task.recurring.type || 'daily';
+            document.getElementById('editRecurringInterval').value = task.recurring.interval || 1;
+            document.getElementById('editRecurringEnd').value = task.recurring.endDate || '';
+        }
+
+        // Display current attachments
+        const attachmentsContainer = document.getElementById('currentAttachments');
+        if (task.attachments && task.attachments.length > 0) {
+            attachmentsContainer.innerHTML = '<h4>Current Attachments:</h4>' + 
+                task.attachments.map((att, idx) => `
+                    <div class="attachment-preview">
+                        <span>📎 ${att.name}</span>
+                        <button type="button" class="btn-remove" onclick="taskManager.deleteAttachment(${task.id}, ${idx}); taskManager.openEditModal(${task.id});">Remove</button>
+                    </div>
+                `).join('');
+        } else {
+            attachmentsContainer.innerHTML = '';
+        }
+
         document.getElementById('editModal').style.display = 'block';
+    }
+
+    addSubtaskFromInput(taskId) {
+        const input = document.getElementById(`subtask-${taskId}`);
+        const text = input.value.trim();
+        if (text) {
+            this.addSubtask(taskId, text);
+            input.value = '';
+        }
     }
 
     updateStats() {
@@ -537,9 +712,58 @@ class TaskManager {
         return tagsString.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
     }
 
+    async handleFileUpload(files) {
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        const attachments = [];
+        
+        for (let file of files) {
+            if (file.size > maxSize) {
+                this.showNotification(`File ${file.name} is too large. Max size is 5MB.`, 'warning');
+                continue;
+            }
+            
+            try {
+                const data = await this.fileToBase64(file);
+                attachments.push({
+                    name: file.name,
+                    type: file.type,
+                    size: file.size,
+                    data: data
+                });
+            } catch (error) {
+                this.showNotification(`Failed to upload ${file.name}`, 'error');
+            }
+        }
+        
+        return attachments;
+    }
+
+    fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
     attachEventListeners() {
-        document.getElementById('taskForm').addEventListener('submit', (e) => {
+        // Toggle recurring options visibility
+        document.getElementById('isRecurring').addEventListener('change', (e) => {
+            document.getElementById('recurringOptions').style.display = e.target.checked ? 'block' : 'none';
+        });
+
+        document.getElementById('editIsRecurring').addEventListener('change', (e) => {
+            document.getElementById('editRecurringOptions').style.display = e.target.checked ? 'block' : 'none';
+        });
+
+        document.getElementById('taskForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            const isRecurring = document.getElementById('isRecurring').checked;
+            const files = document.getElementById('attachments').files;
+            const attachments = files.length > 0 ? await this.handleFileUpload(files) : [];
+            
             const task = {
                 title: document.getElementById('title').value,
                 description: document.getElementById('description').value,
@@ -547,15 +771,28 @@ class TaskManager {
                 category: document.getElementById('category').value,
                 priority: document.getElementById('priority').value,
                 reminder: document.getElementById('reminder').value,
-                tags: this.parseTags(document.getElementById('tags').value)
+                tags: this.parseTags(document.getElementById('tags').value),
+                attachments: attachments,
+                recurring: isRecurring ? {
+                    type: document.getElementById('recurringType').value,
+                    interval: parseInt(document.getElementById('recurringInterval').value) || 1,
+                    endDate: document.getElementById('recurringEnd').value || null
+                } : null
             };
             this.addTask(task);
             e.target.reset();
+            document.getElementById('recurringOptions').style.display = 'none';
         });
 
-        document.getElementById('editTaskForm').addEventListener('submit', (e) => {
+        document.getElementById('editTaskForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = parseInt(document.getElementById('editTaskId').value);
+            const task = this.tasks.find(t => t.id === id);
+            
+            const isRecurring = document.getElementById('editIsRecurring').checked;
+            const files = document.getElementById('editAttachments').files;
+            const newAttachments = files.length > 0 ? await this.handleFileUpload(files) : [];
+            
             const updatedTask = {
                 title: document.getElementById('editTitle').value,
                 description: document.getElementById('editDescription').value,
@@ -563,7 +800,13 @@ class TaskManager {
                 category: document.getElementById('editCategory').value,
                 priority: document.getElementById('editPriority').value,
                 reminder: document.getElementById('editReminder').value,
-                tags: this.parseTags(document.getElementById('editTags').value)
+                tags: this.parseTags(document.getElementById('editTags').value),
+                attachments: [...(task.attachments || []), ...newAttachments],
+                recurring: isRecurring ? {
+                    type: document.getElementById('editRecurringType').value,
+                    interval: parseInt(document.getElementById('editRecurringInterval').value) || 1,
+                    endDate: document.getElementById('editRecurringEnd').value || null
+                } : null
             };
             this.updateTask(id, updatedTask);
             document.getElementById('editModal').style.display = 'none';
