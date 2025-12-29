@@ -32,6 +32,9 @@ jobs:
           test -f index.html && echo "  ✓ index.html found"
           test -f app.js && echo "  ✓ app.js found"
           test -f login.html && echo "  ✓ login.html found"
+          test -f index.css && echo "  ✓ index.css found"
+          test -f login.css && echo "  ✓ login.css found"
+          test -f login.js && echo "  ✓ login.js found"
           echo "✓ All core files present"
       
       - name: Check file integrity
