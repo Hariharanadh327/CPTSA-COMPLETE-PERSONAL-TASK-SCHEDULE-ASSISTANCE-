@@ -1,0 +1,112 @@
+name: Productivity Check
+
+on:
+  schedule:
+    # Run at noon every weekday (Monday-Friday) at 12:00 PM UTC
+    - cron: '0 12 * * 1-5'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  midday-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Midday greeting
+        run: |
+          echo "🌤️ Midday Check-In"
+          echo "📅 $(date '+%A, %B %d, %Y')"
+          echo "⏰ Noon - Time for a productivity check!"
+      
+      - name: Progress review
+        run: |
+          echo ""
+          echo "📊 MIDDAY PROGRESS REVIEW"
+          echo "========================"
+          echo ""
+          echo "How's your day going so far?"
+          echo ""
+          echo "✓ Morning tasks completed?"
+          echo "✓ Staying on schedule?"
+          echo "✓ Any urgent items to address?"
+          echo "✓ Taking necessary breaks?"
+      
+      - name: Afternoon planning
+        run: |
+          echo ""
+          echo "🎯 AFTERNOON PRIORITIES"
+          echo "======================"
+          echo ""
+          echo "Focus areas for this afternoon:"
+          echo ""
+          echo "☐ Review remaining tasks for today"
+          echo "☐ Adjust priorities if needed"
+          echo "☐ Handle any urgent items"
+          echo "☐ Plan for end-of-day tasks"
+          echo "☐ Schedule tomorrow's important items"
+      
+      - name: Quick break reminder
+        run: |
+          echo ""
+          echo "☕ BREAK TIME REMINDER"
+          echo "====================="
+          echo ""
+          echo "Remember to take care of yourself:"
+          echo "   ⏸️  Take a short break"
+          echo "   💧 Stay hydrated"
+          echo "   🚶 Stretch or take a walk"
+          echo "   🍎 Have a healthy snack"
+          echo "   👀 Rest your eyes"
+          echo "   🧠 Clear your mind"
+      
+      - name: Motivation boost
+        run: |
+          # Array of midday motivational messages
+          messages=(
+            "💪 You're halfway through the day! Keep up the great work!"
+            "🌟 Great progress so far! Stay focused on your goals!"
+            "🚀 Momentum is building! Finish strong this afternoon!"
+            "⭐ You're doing amazing! Keep that energy going!"
+            "🎯 Stay focused! The afternoon is yours to conquer!"
+            "✨ Excellent work this morning! Let's make the afternoon count!"
+          )
+          # Pick a random message
+          message=${messages[$RANDOM % ${#messages[@]}]}
+          echo ""
+          echo "$message"
+      
+      - name: Create midday summary
+        run: |
+          echo "🌤️ MIDDAY PRODUCTIVITY CHECK" > midday-check.md
+          echo "============================" >> midday-check.md
+          echo "" >> midday-check.md
+          echo "**Date**: $(date '+%Y-%m-%d')" >> midday-check.md
+          echo "**Day**: $(date '+%A')" >> midday-check.md
+          echo "**Time**: 12:00 PM" >> midday-check.md
+          echo "" >> midday-check.md
+          echo "## 📊 Progress Check" >> midday-check.md
+          echo "" >> midday-check.md
+          echo "Time to review your progress:" >> midday-check.md
+          echo "- What have you accomplished this morning?" >> midday-check.md
+          echo "- Are you on track with your daily goals?" >> midday-check.md
+          echo "- Any obstacles or challenges?" >> midday-check.md
+          echo "" >> midday-check.md
+          echo "## 🎯 Afternoon Action Items" >> midday-check.md
+          echo "- Review your task list" >> midday-check.md
+          echo "- Prioritize remaining tasks" >> midday-check.md
+          echo "- Handle urgent items first" >> midday-check.md
+          echo "- Schedule breaks to stay productive" >> midday-check.md
+          echo "" >> midday-check.md
+          echo "## ⚡ Productivity Tip" >> midday-check.md
+          echo "The afternoon is prime time for focused work. Eliminate distractions and tackle your important tasks!" >> midday-check.md
+          echo "" >> midday-check.md
+          echo "---" >> midday-check.md
+          echo "*Keep up the momentum!* 🚀" >> midday-check.md
+          cat midday-check.md
+      
+      - name: Success message
+        run: |
+          echo "✅ Midday check completed!"
+          echo "💪 Have a productive afternoon!"

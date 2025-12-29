@@ -1,0 +1,98 @@
+name: Evening Summary
+
+on:
+  schedule:
+    # Run every day at 6:00 PM UTC (Evening summary)
+    - cron: '0 18 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  evening-summary:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Evening greeting
+        run: |
+          echo "🌙 Good Evening! Time to review your day."
+          echo "📅 $(date '+%A, %B %d, %Y')"
+          echo "⏰ $(date '+%H:%M %Z')"
+      
+      - name: Day reflection prompt
+        run: |
+          echo "✨ EVENING REFLECTION"
+          echo "===================="
+          echo ""
+          echo "Take a moment to reflect on your day:"
+          echo ""
+          echo "✅ What tasks did you complete today?"
+          echo "🎯 What goals did you achieve?"
+          echo "💡 What did you learn?"
+          echo "🔄 What can you improve tomorrow?"
+          echo "⏭️  What tasks should carry over to tomorrow?"
+      
+      - name: Tomorrow preparation
+        run: |
+          echo ""
+          echo "📋 PREPARE FOR TOMORROW"
+          echo "======================"
+          echo ""
+          echo "☐ Review uncompleted tasks"
+          echo "☐ Mark completed tasks as done"
+          echo "☐ Set priorities for tomorrow"
+          echo "☐ Schedule important meetings or deadlines"
+          echo "☐ Plan your first task for tomorrow morning"
+          echo "☐ Set reminders for time-sensitive tasks"
+      
+      - name: Evening wellness reminder
+        run: |
+          echo ""
+          echo "💆 WELLNESS REMINDER"
+          echo "==================="
+          echo ""
+          echo "🧘 Take care of yourself:"
+          echo "   - Rest and recharge"
+          echo "   - Disconnect from work"
+          echo "   - Prepare for a good night's sleep"
+          echo "   - Reflect on today's accomplishments"
+          echo "   - Be proud of what you achieved"
+      
+      - name: Create evening summary
+        run: |
+          echo "🌆 EVENING SUMMARY" > evening-summary.md
+          echo "=================" >> evening-summary.md
+          echo "" >> evening-summary.md
+          echo "**Date**: $(date '+%Y-%m-%d')" >> evening-summary.md
+          echo "**Day**: $(date '+%A')" >> evening-summary.md
+          echo "" >> evening-summary.md
+          echo "## 🎯 End of Day Review" >> evening-summary.md
+          echo "" >> evening-summary.md
+          echo "Time to wrap up and prepare for tomorrow:" >> evening-summary.md
+          echo "" >> evening-summary.md
+          echo "### ✅ Today's Checklist" >> evening-summary.md
+          echo "- Review completed tasks" >> evening-summary.md
+          echo "- Note any blockers or challenges" >> evening-summary.md
+          echo "- Update task statuses" >> evening-summary.md
+          echo "- Celebrate your wins (big or small!)" >> evening-summary.md
+          echo "" >> evening-summary.md
+          echo "### 📅 Tomorrow's Planning" >> evening-summary.md
+          echo "- Schedule your top 3 priorities" >> evening-summary.md
+          echo "- Set realistic goals" >> evening-summary.md
+          echo "- Prepare any needed materials" >> evening-summary.md
+          echo "- Set early reminders" >> evening-summary.md
+          echo "" >> evening-summary.md
+          echo "### 💤 Evening Routine" >> evening-summary.md
+          echo "- Disconnect from work tasks" >> evening-summary.md
+          echo "- Get adequate rest" >> evening-summary.md
+          echo "- Prepare for tomorrow" >> evening-summary.md
+          echo "" >> evening-summary.md
+          echo "---" >> evening-summary.md
+          echo "*Sleep well and wake up refreshed!* 🌙" >> evening-summary.md
+          cat evening-summary.md
+      
+      - name: Success message
+        run: |
+          echo "✅ Evening summary completed!"
+          echo "🌙 Have a restful evening!"

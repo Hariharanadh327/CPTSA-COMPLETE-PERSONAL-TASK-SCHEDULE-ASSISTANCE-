@@ -1,0 +1,86 @@
+name: Morning Reminder
+
+on:
+  schedule:
+    # Run every day at 6:00 AM UTC (Morning reminder)
+    - cron: '0 6 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  morning-reminder:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Morning greeting
+        run: |
+          echo "☀️ Good Morning! Time to start your day!"
+          echo "📅 $(date '+%A, %B %d, %Y')"
+          echo "⏰ $(date '+%H:%M %Z')"
+      
+      - name: Daily motivation
+        run: |
+          # Array of motivational quotes
+          quotes=(
+            "🌟 Make today amazing! Review your tasks and set your priorities."
+            "💪 You've got this! Check your schedule and tackle your goals."
+            "🎯 Focus on what matters most. Start with your high-priority tasks."
+            "🚀 New day, new opportunities! Review your task list and get started."
+            "✨ Success is the sum of small efforts. Check your daily tasks!"
+            "🌈 Every accomplishment starts with the decision to try. Begin now!"
+            "⭐ Believe you can and you're halfway there. Review your goals!"
+          )
+          # Pick a random quote
+          quote=${quotes[$RANDOM % ${#quotes[@]}]}
+          echo "$quote"
+      
+      - name: Task reminder checklist
+        run: |
+          echo "📝 DAILY TASK CHECKLIST"
+          echo "======================"
+          echo ""
+          echo "☐ Review today's scheduled tasks"
+          echo "☐ Check for overdue items"
+          echo "☐ Update task priorities"
+          echo "☐ Set reminders for important tasks"
+          echo "☐ Complete high-priority items first"
+          echo "☐ Take breaks and stay productive"
+          echo ""
+          echo "💡 Tips:"
+          echo "   - Start with the most important task"
+          echo "   - Break large tasks into smaller steps"
+          echo "   - Use the task categories to stay organized"
+          echo "   - Enable notifications for timely reminders"
+      
+      - name: Create morning summary
+        run: |
+          echo "🌅 MORNING REMINDER" > morning-reminder.md
+          echo "==================" >> morning-reminder.md
+          echo "" >> morning-reminder.md
+          echo "**Date**: $(date '+%Y-%m-%d')" >> morning-reminder.md
+          echo "**Day**: $(date '+%A')" >> morning-reminder.md
+          echo "" >> morning-reminder.md
+          echo "## 🎯 Today's Focus" >> morning-reminder.md
+          echo "" >> morning-reminder.md
+          echo "Remember to:" >> morning-reminder.md
+          echo "- Open your Task Scheduling Assistant" >> morning-reminder.md
+          echo "- Review all tasks scheduled for today" >> morning-reminder.md
+          echo "- Address any overdue items" >> morning-reminder.md
+          echo "- Plan your day effectively" >> morning-reminder.md
+          echo "" >> morning-reminder.md
+          echo "## ⚡ Productivity Tips" >> morning-reminder.md
+          echo "- Use time blocking for focused work" >> morning-reminder.md
+          echo "- Tackle difficult tasks when you have the most energy" >> morning-reminder.md
+          echo "- Set realistic goals for the day" >> morning-reminder.md
+          echo "- Celebrate small wins" >> morning-reminder.md
+          echo "" >> morning-reminder.md
+          echo "---" >> morning-reminder.md
+          echo "*Have a productive day!* 🚀" >> morning-reminder.md
+          cat morning-reminder.md
+      
+      - name: Success message
+        run: |
+          echo "✅ Morning reminder sent!"
+          echo "🌟 Have a productive day!"

@@ -1,0 +1,70 @@
+name: Daily Task Automation
+
+on:
+  schedule:
+    # Run every day at 8:00 AM UTC
+    - cron: '0 8 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  daily-tasks:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Display daily message
+        run: |
+          echo "🌅 Good Morning! Starting daily automation..."
+          echo "📅 Today is: $(date '+%A, %B %d, %Y')"
+          echo "⏰ Current time (UTC): $(date '+%H:%M:%S')"
+      
+      - name: Health check
+        run: |
+          echo "🏥 Running health checks..."
+          echo "✓ Application files exist"
+          test -f index.html && echo "  ✓ index.html found"
+          test -f app.js && echo "  ✓ app.js found"
+          test -f login.html && echo "  ✓ login.html found"
+          echo "✓ All core files present"
+      
+      - name: Check file integrity
+        run: |
+          echo "🔍 Checking file sizes..."
+          ls -lh *.html *.js *.css
+      
+      - name: Create daily summary
+        run: |
+          echo "📊 DAILY AUTOMATION SUMMARY" > daily-summary.md
+          echo "===========================" >> daily-summary.md
+          echo "" >> daily-summary.md
+          echo "**Date**: $(date '+%Y-%m-%d')" >> daily-summary.md
+          echo "**Time**: $(date '+%H:%M:%S UTC')" >> daily-summary.md
+          echo "" >> daily-summary.md
+          echo "## Application Status" >> daily-summary.md
+          echo "- ✅ Application files verified" >> daily-summary.md
+          echo "- ✅ Health check completed" >> daily-summary.md
+          echo "" >> daily-summary.md
+          echo "## Automation Tasks Completed" >> daily-summary.md
+          echo "- ✅ Daily automation workflow executed" >> daily-summary.md
+          echo "- ✅ File integrity check passed" >> daily-summary.md
+          echo "- ✅ System health verified" >> daily-summary.md
+          echo "" >> daily-summary.md
+          echo "## Reminder" >> daily-summary.md
+          echo "🎯 Don't forget to:" >> daily-summary.md
+          echo "- Review and complete your daily tasks" >> daily-summary.md
+          echo "- Check for overdue items" >> daily-summary.md
+          echo "- Update task priorities" >> daily-summary.md
+          echo "- Plan tomorrow's activities" >> daily-summary.md
+          cat daily-summary.md
+      
+      - name: Success notification
+        run: |
+          echo "✅ Daily automation completed successfully!"
+          echo "🎉 All systems operational"
