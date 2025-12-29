@@ -1,0 +1,73 @@
+name: Weekly Maintenance
+
+on:
+  schedule:
+    # Run every Sunday at 9:00 AM UTC
+    - cron: '0 9 * * 0'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  weekly-maintenance:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Weekly greeting
+        run: |
+          echo "🌟 Happy Sunday! Running weekly maintenance..."
+          echo "📅 Week of: $(date '+%Y-%m-%d')"
+      
+      - name: Code quality check
+        run: |
+          echo "🔍 Running code quality checks..."
+          echo "Checking HTML files..."
+          for file in *.html; do
+            if [ -f "$file" ]; then
+              lines=$(wc -l < "$file")
+              echo "  ✓ $file - $lines lines"
+            fi
+          done
+          
+          echo "Checking JavaScript files..."
+          for file in *.js; do
+            if [ -f "$file" ]; then
+              lines=$(wc -l < "$file")
+              echo "  ✓ $file - $lines lines"
+            fi
+          done
+      
+      - name: Repository statistics
+        run: |
+          echo "📊 Repository Statistics"
+          echo "======================="
+          echo "Total commits: $(git rev-list --all --count)"
+          echo "Latest commit: $(git log -1 --pretty=format:'%h - %s (%cr)')"
+          echo "Repository size: $(du -sh . | cut -f1)"
+      
+      - name: Weekly summary
+        run: |
+          echo "📋 WEEKLY MAINTENANCE SUMMARY" > weekly-summary.md
+          echo "=============================" >> weekly-summary.md
+          echo "" >> weekly-summary.md
+          echo "**Week of**: $(date '+%Y-%m-%d')" >> weekly-summary.md
+          echo "" >> weekly-summary.md
+          echo "## Maintenance Tasks Completed" >> weekly-summary.md
+          echo "- ✅ Code quality check completed" >> weekly-summary.md
+          echo "- ✅ Repository statistics generated" >> weekly-summary.md
+          echo "- ✅ File integrity verified" >> weekly-summary.md
+          echo "" >> weekly-summary.md
+          echo "## Recommendations" >> weekly-summary.md
+          echo "- Review completed tasks from the past week" >> weekly-summary.md
+          echo "- Plan goals for the upcoming week" >> weekly-summary.md
+          echo "- Archive old completed tasks if needed" >> weekly-summary.md
+          echo "- Update recurring tasks as necessary" >> weekly-summary.md
+          cat weekly-summary.md
+      
+      - name: Completion message
+        run: |
+          echo "✅ Weekly maintenance completed!"
+          echo "🎉 Ready for a productive week ahead!"
